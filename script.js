@@ -370,10 +370,16 @@ emergencyButton.addEventListener("click", async () => {
       method: "POST",
       body: JSON.stringify({ group, hospital })
     });
-    alert(result.message || `Emergency notification sent to ${result.sent} donor(s).`);
+    if (result.sent) {
+      alert(result.message || `Emergency notification sent to ${result.sent} donor(s).`);
+      return;
+    }
+
+    alert(`${result.message || "No direct WhatsApp notification was sent."}\n\nOpening WhatsApp manually for ${firstDonor.name}.`);
+    openWhatsappMessage(firstDonor.phone, message);
   } catch (error) {
     alert(`${error.message}\n\nOpening WhatsApp manually for ${firstDonor.name}.`);
-    window.location.href = buildWhatsappUrl(firstDonor.phone, message);
+    openWhatsappMessage(firstDonor.phone, message);
   }
 });
 
@@ -435,7 +441,15 @@ async function sendDirectWhatsAppReminders() {
       setSendStatus(`Sent ${result.sent} WhatsApp reminder(s) directly.`, "success");
     }
   } catch (error) {
-    setSendStatus(error.message, "error");
+    const dueToday = getDueTodayOwnerDonors();
+    if (!dueToday.length) {
+      setSendStatus(error.message, "error");
+      return;
+    }
+
+    const firstDonor = dueToday[0];
+    setSendStatus(`${error.message} Opening WhatsApp manually for ${firstDonor.name}.`, "error");
+    openWhatsappMessage(firstDonor.phone, buildReminderMessage(firstDonor));
   } finally {
     sendReminderButton.disabled = false;
   }
@@ -754,6 +768,10 @@ function buildWhatsappUrl(phone, message) {
   return `https://wa.me/${encodeURIComponent(number)}?text=${encodeURIComponent(message)}`;
 }
 
+function openWhatsappMessage(phone, message) {
+  window.open(buildWhatsappUrl(phone, message), "_blank", "noopener");
+}
+
 function buildSmsUrl(phone, message) {
   return `sms:${encodeURIComponent(cleanPhone(phone))}?body=${encodeURIComponent(message)}`;
 }
@@ -825,7 +843,7 @@ function renderGroupCounts(enrichedDonors) {
 }
 
 function renderDailyReminders(enrichedDonors) {
-  const dueToday = enrichedDonors.filter((donor) => donor.isOwner && donor.status.remainingDays === 0);
+  const dueToday = getDueTodayOwnerDonors(enrichedDonors);
   dailyReminderList.innerHTML = "";
 
   if (!dueToday.length) {
@@ -856,11 +874,15 @@ function showDailyReminderNotification(enrichedDonors) {
   const seenKey = `reminders-seen-${toDateInputValue(todayDate())}`;
   if (sessionStorage.getItem(seenKey)) return;
 
-  const dueToday = enrichedDonors.filter((donor) => donor.isOwner && donor.status.remainingDays === 0);
+  const dueToday = getDueTodayOwnerDonors(enrichedDonors);
   if (!dueToday.length) return;
 
   sessionStorage.setItem(seenKey, "true");
   alert(buildDueTodayPopupMessage(dueToday));
+}
+
+function getDueTodayOwnerDonors(sourceDonors = donors.map(normalizeDonor)) {
+  return sourceDonors.filter((donor) => donor.isOwner && donor.status.remainingDays === 0);
 }
 
 function buildDueTodayPopupMessage(dueToday) {
