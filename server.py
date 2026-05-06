@@ -13,8 +13,12 @@ import urllib.error
 import urllib.request
 from urllib.parse import unquote
 
+from env_loader import load_env_file
+
 
 BASE_DIR = Path(__file__).resolve().parent
+load_env_file(BASE_DIR / ".env")
+
 DB_PATH = BASE_DIR / "donors.db"
 DONATION_GAP_DAYS = 90
 PASSWORD_ITERATIONS = 200_000
@@ -53,6 +57,14 @@ def build_ready_message(donor):
         f"Hello {donor['name']}, good news. You are ready to donate blood today. "
         "If you are healthy and available, please consider donating again. "
         "Your one donation can become someone's second chance."
+    )
+
+
+def build_emergency_message(group, hospital):
+    return (
+        f"Urgent request: {group} blood is needed at {hospital}. "
+        "If you are healthy, eligible, and available, please help with a donation today. "
+        "Your support can save a life."
     )
 
 
@@ -338,6 +350,10 @@ class BloodDonationHandler(SimpleHTTPRequestHandler):
             self.handle_send_reminders()
             return
 
+        if self.path == "/api/emergency/send":
+            self.handle_send_emergency()
+            return
+
         self.send_error(404)
 
     def handle_register(self):
@@ -525,6 +541,64 @@ class BloodDonationHandler(SimpleHTTPRequestHandler):
                 "failed": len(failures),
                 "failures": failures[:3],
                 "message": "WhatsApp reminders sent." if sent else failures[0]["error"],
+            },
+            status=status,
+        )
+
+    def handle_send_emergency(self):
+        user = self.require_user()
+        if not user:
+            return
+
+        try:
+            data = self.read_json()
+            group = data["group"].strip()
+            hospital = data.get("hospital", "the requested hospital").strip() or "the requested hospital"
+        except (KeyError, json.JSONDecodeError):
+            self.send_json({"error": "Select blood group and emergency hospital."}, status=400)
+            return
+
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT donors.*, users.email AS owner_email, users.name AS owner_name
+                FROM donors
+                LEFT JOIN users ON users.id = donors.user_id
+                WHERE donors.user_id = ? AND donors.blood_group = ?
+                ORDER BY next_donation ASC, name ASC
+                """,
+                (user["id"], group),
+            ).fetchall()
+
+        ready_donors = [row for row in rows if is_ready_to_donate(row["next_donation"])]
+        if not ready_donors:
+            self.send_json({"sent": 0, "message": f"No eligible {group} donor is available today."})
+            return
+
+        message = build_emergency_message(group, hospital)
+        sent = 0
+        failures = []
+        for donor in ready_donors:
+            try:
+                send_whatsapp_text(donor["phone"], message)
+                sent += 1
+            except RuntimeError as error:
+                failures.append({"donor": donor["name"], "error": str(error)})
+
+        with get_connection() as connection:
+            connection.execute(
+                "INSERT INTO audit_logs (user_id, action, detail) VALUES (?, ?, ?)",
+                (user["id"], "send_emergency_whatsapp", f"{group} at {hospital}; sent {sent}; failures {len(failures)}"),
+            )
+            connection.commit()
+
+        status = 200 if sent else 503
+        self.send_json(
+            {
+                "sent": sent,
+                "failed": len(failures),
+                "failures": failures[:3],
+                "message": "Emergency WhatsApp notifications sent." if sent else failures[0]["error"],
             },
             status=status,
         )

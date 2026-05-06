@@ -345,7 +345,7 @@ donorTable.addEventListener("click", async (event) => {
   await loadAndRender();
 });
 
-emergencyButton.addEventListener("click", () => {
+emergencyButton.addEventListener("click", async () => {
   const group = emergencyGroup.value;
   const hospital = emergencyHospital.value.trim() || "the requested hospital";
 
@@ -365,8 +365,16 @@ emergencyButton.addEventListener("click", () => {
 
   const firstDonor = eligibleDonors[0];
   const message = buildEmergencyMessage(group, hospital);
-  alert(`${eligibleDonors.length} eligible ${group} donor(s) found. Opening WhatsApp message for ${firstDonor.name}.`);
-  window.location.href = buildWhatsappUrl(firstDonor.phone, message);
+  try {
+    const result = await apiRequest("/emergency/send", {
+      method: "POST",
+      body: JSON.stringify({ group, hospital })
+    });
+    alert(result.message || `Emergency notification sent to ${result.sent} donor(s).`);
+  } catch (error) {
+    alert(`${error.message}\n\nOpening WhatsApp manually for ${firstDonor.name}.`);
+    window.location.href = buildWhatsappUrl(firstDonor.phone, message);
+  }
 });
 
 async function apiRequest(path, options = {}) {

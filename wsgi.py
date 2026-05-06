@@ -6,8 +6,15 @@ import secrets
 import sqlite3
 from urllib.parse import unquote
 
+from env_loader import load_env_file
+
+
+BASE_DIR_FOR_ENV = Path(__file__).resolve().parent
+load_env_file(BASE_DIR_FOR_ENV / ".env")
+
 from server import (
     BASE_DIR,
+    build_emergency_message,
     PASSWORD_PATTERN,
     SESSION_COOKIE,
     build_ready_message,
@@ -296,6 +303,62 @@ def handle_send_reminders(environ, start_response):
     )
 
 
+def handle_send_emergency(environ, start_response):
+    user, error = require_user(environ, start_response)
+    if error:
+        return error
+    try:
+        data = read_json(environ)
+        group = data["group"].strip()
+        hospital = data.get("hospital", "the requested hospital").strip() or "the requested hospital"
+    except (KeyError, json.JSONDecodeError):
+        return json_response(start_response, {"error": "Select blood group and emergency hospital."}, status=400)
+
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT donors.*, users.email AS owner_email, users.name AS owner_name
+            FROM donors
+            LEFT JOIN users ON users.id = donors.user_id
+            WHERE donors.user_id = ? AND donors.blood_group = ?
+            ORDER BY next_donation ASC, name ASC
+            """,
+            (user["id"], group),
+        ).fetchall()
+
+    ready_donors = [row for row in rows if is_ready_to_donate(row["next_donation"])]
+    if not ready_donors:
+        return json_response(start_response, {"sent": 0, "message": f"No eligible {group} donor is available today."})
+
+    message = build_emergency_message(group, hospital)
+    sent = 0
+    failures = []
+    for donor in ready_donors:
+        try:
+            send_whatsapp_text(donor["phone"], message)
+            sent += 1
+        except RuntimeError as error:
+            failures.append({"donor": donor["name"], "error": str(error)})
+
+    with get_connection() as connection:
+        connection.execute(
+            "INSERT INTO audit_logs (user_id, action, detail) VALUES (?, ?, ?)",
+            (user["id"], "send_emergency_whatsapp", f"{group} at {hospital}; sent {sent}; failures {len(failures)}"),
+        )
+        connection.commit()
+
+    return json_response(
+        start_response,
+        {
+            "sent": sent,
+            "failed": len(failures),
+            "failures": failures[:3],
+            "message": "Emergency WhatsApp notifications sent." if sent else failures[0]["error"],
+        },
+        status=200 if sent else 503,
+    )
+
+
 def handle_delete_donor(environ, start_response, path):
     user, error = require_user(environ, start_response)
     if error:
@@ -343,6 +406,8 @@ def application(environ, start_response):
         return handle_create_donor(environ, start_response)
     if method == "POST" and path == "/api/reminders/send":
         return handle_send_reminders(environ, start_response)
+    if method == "POST" and path == "/api/emergency/send":
+        return handle_send_emergency(environ, start_response)
     if method == "DELETE" and path.startswith("/api/donors/"):
         return handle_delete_donor(environ, start_response, path)
     if method == "GET":
