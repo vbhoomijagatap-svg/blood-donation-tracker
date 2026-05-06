@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood Donation Tracker System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+  <section class="auth-shell" id="authShell">
+    <div class="auth-card">
+      <p class="eyebrow">Secure access</p>
+      <h1>Blood Donation Tracker Login</h1>
+      <p class="auth-text">Create an account or log in to protect donor details with a private email and password.</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="showRegister" type="button">Register</button>
+        <button class="auth-tab" id="showLogin" type="button">Login</button>
+      </div>
+
+      <form class="auth-form hidden" id="loginForm">
+        <label>
+          Email
+          <input type="email" id="loginEmail" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Password
+          <span class="password-field">
+            <input type="password" id="loginPassword" placeholder="Enter password" required>
+            <button class="password-toggle" type="button" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Show password" title="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6c2.1 0 3.9.7 5.4 1.6"></path>
+                <path d="M21.5 12s-3.5 6-9.5 6c-2.1 0-3.9-.7-5.4-1.6"></path>
+                <path d="M4 4l16 16"></path>
+              </svg>
+            </button>
+          </span>
+        </label>
+        <button class="primary-button" type="submit">Login securely</button>
+      </form>
+
+      <form class="auth-form" id="registerForm">
+        <label>
+          Email
+          <input type="email" id="registerEmail" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Strong password
+          <span class="password-field">
+            <input type="password" id="registerPassword" placeholder="At least 8 chars, A-z, number, symbol" required>
+            <button class="password-toggle" type="button" onclick="togglePasswordVisibility('registerPassword', this)" aria-label="Show password" title="Show password">
+              <svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6c2.1 0 3.9.7 5.4 1.6"></path>
+                <path d="M21.5 12s-3.5 6-9.5 6c-2.1 0-3.9-.7-5.4-1.6"></path>
+                <path d="M4 4l16 16"></path>
+              </svg>
+            </button>
+          </span>
+        </label>
+        <p class="password-hint">Use 8+ characters with uppercase, lowercase, number, and symbol.</p>
+        <button class="primary-button" type="submit">Create secure account</button>
+      </form>
+
+      <p class="auth-message" id="authMessage"></p>
+    </div>
+  </section>
+
+  <main class="app-shell hidden" id="appShell">
+    <div class="secure-topbar">
+      <div>
+        <span>Logged in as</span>
+        <strong id="currentUserEmail">-</strong>
+      </div>
+      <button class="logout-button" id="logoutButton" type="button">Logout</button>
+    </div>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Donor care dashboard</p>
+        <h1 id="page-title">Blood Donation Tracker System</h1>
+        <p class="hero-text">Add donor details, calculate next donation date as last donation date plus 90 days, and contact eligible donors for reminders or emergency needs.</p>
+      </div>
+      <div class="hero-panel" aria-label="Donation impact summary">
+        <div>
+          <span class="panel-number" id="heroReady">0</span>
+          <span class="panel-label">Ready now</span>
+        </div>
+        <div>
+          <span class="panel-number" id="heroSoon">0</span>
+          <span class="panel-label">Reminder due today</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Tracker statistics">
+      <article class="stat-card">
+        <span>Total donors</span>
+        <strong id="totalDonors">0</strong>
+      </article>
+      <article class="stat-card">
+        <span>Eligible today</span>
+        <strong id="readyDonors">0</strong>
+      </article>
+      <article class="stat-card">
+        <span>Donor accounts</span>
+        <strong id="totalAccounts">0</strong>
+      </article>
+      <article class="stat-card">
+        <span>Due today</span>
+        <strong id="reminderDonors">0</strong>
+      </article>
+    </section>
+
+    <section class="flow-strip" aria-label="System flow">
+      <span>1. Enter donor details</span>
+      <span>2. Calculate next donation date</span>
+      <span>3. Check daily reminders</span>
+      <span>4. Call or message donor</span>
+    </section>
+
+    <section class="workspace">
+      <form class="donor-form" id="donorForm">
+        <div class="section-heading">
+          <p class="eyebrow">New donor</p>
+          <h2>Add donation record</h2>
+        </div>
+
+        <label>
+          Donor name
+          <input type="text" id="donorName" placeholder="Aarav Mehta" required>
+        </label>
+
+        <div class="form-row">
+          <label>
+            Blood group
+            <select id="bloodGroup" required>
+              <option value="">Select</option>
+              <option>A+</option>
+              <option>A-</option>
+              <option>B+</option>
+              <option>B-</option>
+              <option>AB+</option>
+              <option>AB-</option>
+              <option>O+</option>
+              <option>O-</option>
+            </select>
+          </label>
+          <label>
+            Contact number
+            <input type="tel" id="phone" placeholder="+91 98765 43210" required>
+          </label>
+        </div>
+
+        <label>
+          Email
+          <input type="email" id="email" placeholder="donor@example.com">
+        </label>
+
+        <label class="consent-row">
+          <input type="checkbox" id="consent" required>
+          <span>I have permission to save this donor's details and contact them for donation reminders or emergency requests.</span>
+        </label>
+
+        <label>
+          Last donation date
+          <input type="date" id="lastDonation" required>
+        </label>
+
+        <label>
+          State / Union Territory
+          <select id="state" required>
+            <option value="">Select state</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <label>
+            City
+            <select id="city" required>
+              <option value="">Select city</option>
+            </select>
+          </label>
+          <label>
+            Hospital name
+            <input type="text" id="hospital" list="hospitalSuggestions" placeholder="City Blood Bank" required>
+          </label>
+        </div>
+
+        <datalist id="citySuggestions"></datalist>
+        <datalist id="hospitalSuggestions"></datalist>
+
+        <div class="recommendation-box" aria-live="polite">
+          <div class="recommendation-top">
+            <span>Recommended hospitals</span>
+            <div class="recommendation-actions">
+              <button class="location-button" id="nearbyHospitalsButton" type="button">Nearby hospitals</button>
+              <button class="location-button" id="hospitalLocationButton" type="button">Find hospital location</button>
+            </div>
+          </div>
+          <div class="hospital-chips" id="hospitalRecommendations">
+            <button type="button">Select state and city to view suggestions</button>
+          </div>
+        </div>
+
+        <div class="date-preview">
+          <span>Next donation date</span>
+          <strong id="nextDatePreview">Select last donation date</strong>
+        </div>
+
+        <button class="primary-button" type="submit">Add donor</button>
+      </form>
+
+      <section class="donor-board" aria-labelledby="donor-list-title">
+        <div class="board-top">
+          <div class="section-heading">
+            <p class="eyebrow">Main directory</p>
+            <h2 id="donor-list-title">All donors list</h2>
+          </div>
+          <div class="tools">
+            <input type="search" id="searchInput" placeholder="Search name, city, hospital, group">
+            <select id="statusFilter" aria-label="Filter donors by status">
+              <option value="all">All donors</option>
+              <option value="ready">Ready now</option>
+              <option value="today">Reminder today</option>
+              <option value="waiting">Waiting period</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="emergency-bar" aria-label="Emergency donor notification">
+          <select id="emergencyGroup" aria-label="Emergency blood group">
+            <option value="">Select blood group</option>
+            <option>A+</option>
+            <option>A-</option>
+            <option>B+</option>
+            <option>B-</option>
+            <option>AB+</option>
+            <option>AB-</option>
+            <option>O+</option>
+            <option>O-</option>
+          </select>
+          <input type="text" id="emergencyHospital" placeholder="Emergency hospital / location">
+          <button class="danger-button" id="emergencyButton" type="button">Emergency need</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Donor</th>
+                <th>Account</th>
+                <th>Group</th>
+                <th>Hospital</th>
+                <th>Last donated</th>
+                <th>Next eligible</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="donorTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="bottom-grid">
+      <section class="info-panel" aria-labelledby="group-count-title">
+        <div class="section-heading">
+          <p class="eyebrow">Inventory view</p>
+          <h2 id="group-count-title">Blood group count</h2>
+        </div>
+        <div class="group-counts" id="groupCounts"></div>
+      </section>
+
+      <section class="info-panel" aria-labelledby="daily-reminder-title">
+        <div class="section-heading">
+          <p class="eyebrow">Daily check</p>
+          <h2 id="daily-reminder-title">Reminder due today</h2>
+        </div>
+        <button class="primary-button reminder-send-button" id="sendReminderButton" type="button">Send WhatsApp reminders</button>
+        <p class="send-status" id="sendReminderStatus"></p>
+        <div class="reminder-list" id="dailyReminderList"></div>
+      </section>
+    </section>
+
+    <section class="history-panel" aria-labelledby="history-title">
+      <div class="section-heading">
+        <p class="eyebrow">Private account</p>
+        <h2 id="history-title">My donation history</h2>
+      </div>
+      <div class="history-search">
+        <input type="text" id="historyAccountInput" placeholder="Enter your registered email or account name">
+        <button class="primary-button" id="historySearchButton" type="button">Show my history</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <p class="empty-state">Enter the same email or account name used for login to view only your donation history.</p>
+      </div>
+    </section>
+  </main>
+
+  <template id="emptyState">
+    <tr>
+      <td colspan="8" class="empty-state">No donor records match this view.</td>
+    </tr>
+  </template>
+
+  <script src="script.js?v=2"></script>
+</body>
+</html>

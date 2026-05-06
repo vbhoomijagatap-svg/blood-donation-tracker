@@ -1,0 +1,26 @@
+Direct WhatsApp Reminder Setup
+
+This project can send reminder messages directly through WhatsApp Cloud API.
+You must configure these environment variables before starting server.py:
+
+PowerShell example:
+
+$env:WHATSAPP_ACCESS_TOKEN="your_meta_access_token"
+$env:WHATSAPP_PHONE_NUMBER_ID="your_whatsapp_phone_number_id"
+$env:WHATSAPP_API_VERSION="v19.0"
+python server.py
+
+Where to get these:
+
+1. Create or open a Meta Developer app.
+2. Add WhatsApp product.
+3. Open WhatsApp API Setup.
+4. Copy the access token.
+5. Copy the Phone Number ID.
+6. Use a WhatsApp Business number approved by Meta.
+
+Important:
+
+For real proactive reminders outside the WhatsApp customer-service window,
+Meta may require an approved message template. This code sends a text message
+through the Cloud API endpoint and will show the API error if Meta blocks it.
