@@ -52,6 +52,38 @@ a:hover {
   transform: translateY(-1px);
 }
 
+@keyframes buttonFlash {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes buttonShine {
+  0% {
+    left: -85%;
+  }
+  45%,
+  100% {
+    left: 125%;
+  }
+}
+
+@keyframes softPulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 20px rgba(225, 29, 72, 0.12);
+  }
+  50% {
+    box-shadow: 0 16px 32px rgba(225, 29, 72, 0.24);
+  }
+}
+
 .auth-shell {
   min-height: 100vh;
   display: grid;
@@ -113,6 +145,8 @@ a:hover {
 }
 
 .auth-tab {
+  position: relative;
+  overflow: hidden;
   min-height: 42px;
   border: 1px solid #d4dde9;
   border-radius: 6px;
@@ -445,19 +479,38 @@ select:focus {
 }
 
 .primary-button {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   min-height: 48px;
   border: 0;
   border-radius: 6px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  background: linear-gradient(120deg, #e11d48, #f97316, #0f766e, #e11d48);
+  background-size: 260% 260%;
   color: #ffffff;
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(225, 29, 72, 0.24);
+  animation: buttonFlash 5s ease infinite;
+}
+
+.primary-button::after,
+.danger-button::after,
+.auth-tab.active::after {
+  content: "";
+  position: absolute;
+  top: -45%;
+  left: -85%;
+  width: 54%;
+  height: 190%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.58), transparent);
+  transform: rotate(22deg);
+  animation: buttonShine 3.2s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .primary-button:hover {
-  box-shadow: 0 16px 30px rgba(225, 29, 72, 0.3);
+  box-shadow: 0 18px 34px rgba(225, 29, 72, 0.34);
 }
 
 .recommendation-box {
@@ -491,6 +544,8 @@ select:focus {
 }
 
 .location-button {
+  position: relative;
+  overflow: hidden;
   min-height: 34px;
   border: 1px solid #b7d5ec;
   border-radius: 6px;
@@ -509,6 +564,7 @@ select:focus {
 }
 
 .hospital-chips button {
+  animation: softPulse 4s ease-in-out infinite;
   min-height: 34px;
   border: 1px solid #e3c5ca;
   border-radius: 999px;
@@ -571,14 +627,18 @@ select:focus {
 }
 
 .danger-button {
+  position: relative;
+  overflow: hidden;
   min-height: 44px;
   border: 0;
   border-radius: 6px;
-  background: linear-gradient(135deg, #be123c, #7f1d1d);
+  background: linear-gradient(120deg, #be123c, #ef4444, #f97316, #7f1d1d);
+  background-size: 260% 260%;
   color: #ffffff;
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(190, 18, 60, 0.22);
+  animation: buttonFlash 3s ease infinite;
 }
 
 .danger-button:hover {
@@ -664,6 +724,8 @@ tbody tr:hover {
 .whatsapp-link,
 .email-link,
 .delete-button {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -677,27 +739,51 @@ tbody tr:hover {
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
 }
 
+.call-link::after,
+.message-link::after,
+.whatsapp-link::after,
+.email-link::after,
+.delete-button::after,
+.location-button::after,
+.hospital-chips button::after {
+  content: "";
+  position: absolute;
+  top: -45%;
+  left: -90%;
+  width: 45%;
+  height: 190%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: rotate(22deg);
+  animation: buttonShine 4.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .call-link {
   border: 1px solid #b8dac9;
-  background: linear-gradient(180deg, #f0fdf4, #ffffff);
+  background: linear-gradient(120deg, #f0fdf4, #d1fae5, #ffffff);
+  background-size: 220% 220%;
   color: var(--green);
 }
 
 .message-link {
   border: 1px solid #b7d5ec;
-  background: linear-gradient(180deg, #eff6ff, #ffffff);
+  background: linear-gradient(120deg, #eff6ff, #dbeafe, #ffffff);
+  background-size: 220% 220%;
   color: var(--blue);
 }
 
 .whatsapp-link {
   border: 1px solid #b8dac9;
-  background: linear-gradient(180deg, #ecfdf5, #ffffff);
+  background: linear-gradient(120deg, #ecfdf5, #bbf7d0, #ffffff);
+  background-size: 220% 220%;
   color: var(--green);
+  animation: softPulse 3.4s ease-in-out infinite;
 }
 
 .email-link {
   border: 1px solid #ead2a5;
-  background: linear-gradient(180deg, #fffbeb, #ffffff);
+  background: linear-gradient(120deg, #fffbeb, #fef3c7, #ffffff);
+  background-size: 220% 220%;
   color: var(--gold);
 }
 
@@ -708,9 +794,30 @@ tbody tr:hover {
 
 .delete-button {
   border: 1px solid #f0b9c1;
-  background: linear-gradient(180deg, #fff1f4, #ffffff);
+  background: linear-gradient(120deg, #fff1f4, #ffe4e6, #ffffff);
+  background-size: 220% 220%;
   color: var(--brand-dark);
   cursor: pointer;
+}
+
+.call-link:hover,
+.message-link:hover,
+.whatsapp-link:hover,
+.email-link:hover,
+.delete-button:hover,
+.location-button:hover,
+.hospital-chips button:hover {
+  background-position: 100% 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .empty-state {
