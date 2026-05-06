@@ -860,7 +860,28 @@ function showDailyReminderNotification(enrichedDonors) {
   if (!dueToday.length) return;
 
   sessionStorage.setItem(seenKey, "true");
-  alert(`${dueToday.length} donor reminder(s) due today. Use WhatsApp, SMS, Call, or Email from the donor list.`);
+  alert(buildDueTodayPopupMessage(dueToday));
+}
+
+function buildDueTodayPopupMessage(dueToday) {
+  const intro = dueToday.length === 1
+    ? "Donation reminder for today"
+    : `${dueToday.length} donation reminders for today`;
+
+  const donorMessages = dueToday.slice(0, 5).map((donor, index) => {
+    return [
+      `${index + 1}. Hello ${donor.name}, you are ready to donate blood today.`,
+      `Blood group: ${donor.bloodGroup}`,
+      `Hospital: ${donor.hospital}, ${donor.city}`,
+      getDonorQuote(donor)
+    ].join("\n");
+  });
+
+  const remaining = dueToday.length > 5
+    ? `\n\n${dueToday.length - 5} more donor reminder(s) are due today.`
+    : "";
+
+  return `${intro}\n\n${donorMessages.join("\n\n")}${remaining}\n\nUse WhatsApp, SMS, Call, or Email from the donor list.`;
 }
 
 function renderMyHistory(showErrors = true) {
